@@ -822,7 +822,12 @@ bool ImGui::CloseButton(ImGuiID id, const ImVec2& pos)
     ImU32 col = GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
     ImVec2 center = bb.GetCenter();
     if (hovered)
-        window->DrawList->AddCircleFilled(center, ImMax(2.0f, g.FontSize * 0.5f + 1.0f), col, 12);
+	{
+		// RenderNavHighlight(bb, id);
+		// Teena - Added rect fill for arrow button instead of circle fill
+		window->DrawList->AddRectFilled(bb.Min, bb.Max, col, 0);
+		window->DrawList->AddCircleFilled(center, ImMax(2.0f, g.FontSize * 0.5f + 1.0f), col, 12);
+	}
 
     float cross_extent = g.FontSize * 0.5f * 0.7071f - 1.0f;
     ImU32 cross_col = GetColorU32(ImGuiCol_Text);
@@ -5868,7 +5873,8 @@ bool ImGui::TreeNodeBehaviorIsOpen(ImGuiID id, ImGuiTreeNodeFlags flags)
     return is_open;
 }
 
-bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* label, const char* label_end)
+// Teena - Added ImTextureID and icon draw - extended up to collapsing header
+bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* label, const char* label_end, ImTextureID iconTextureID)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -5902,6 +5908,7 @@ bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* l
     const float text_offset_y = ImMax(padding.y, window->DC.CurrLineTextBaseOffset);                    // Latch before ItemSize changes it
     const float text_width = g.FontSize + (label_size.x > 0.0f ? label_size.x + padding.x * 2 : 0.0f);  // Include collapser
     ImVec2 text_pos(window->DC.CursorPos.x + text_offset_x, window->DC.CursorPos.y + text_offset_y);
+	ImVec2 iconPos(window->DC.CursorPos.x, window->DC.CursorPos.y);  
     ItemSize(ImVec2(text_width, frame_height), padding.y);
 
     // For regular tree nodes, we arbitrary allow to click past 2 worth of ItemSpacing
@@ -6018,10 +6025,28 @@ bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* l
         const ImU32 bg_col = GetColorU32((held && hovered) ? ImGuiCol_HeaderActive : hovered ? ImGuiCol_HeaderHovered : ImGuiCol_Header);
         RenderFrame(frame_bb.Min, frame_bb.Max, bg_col, true, style.FrameRounding);
         RenderNavHighlight(frame_bb, id, nav_highlight_flags);
-        if (flags & ImGuiTreeNodeFlags_Bullet)
-            RenderBullet(window->DrawList, ImVec2(text_pos.x - text_offset_x * 0.60f, text_pos.y + g.FontSize * 0.5f), text_col);
-        else if (!is_leaf)
-            RenderArrow(window->DrawList, ImVec2(text_pos.x - text_offset_x + padding.x, text_pos.y), text_col, is_open ? ImGuiDir_Down : ImGuiDir_Right, 1.0f);
+
+        ImVec2 pos;
+		float offset = 0;
+
+		if (flags & ImGuiTreeNodeFlags_Bullet)
+		{
+			pos = ImVec2(text_pos.x - text_offset_x * 0.60f, text_pos.y + g.FontSize * 0.5f);
+			offset = window->DrawList->_Data->FontSize * 0.20f;
+
+            RenderBullet(window->DrawList, pos, text_col);
+            //RenderBullet(window->DrawList, ImVec2(text_pos.x - text_offset_x * 0.60f, text_pos.y + g.FontSize * 0.5f), text_col);
+		}
+		else if (!is_leaf)
+		{
+			pos = ImVec2(text_pos.x - text_offset_x + padding.x, text_pos.y);
+			const float h = window->DrawList->_Data->FontSize * 1.00f;
+			offset = h;
+
+			RenderArrow(window->DrawList, pos, text_col, is_open ? ImGuiDir_Down : ImGuiDir_Right, 1.0f);
+            //RenderArrow(window->DrawList, ImVec2(text_pos.x - text_offset_x + padding.x, text_pos.y), text_col, is_open ? ImGuiDir_Down : ImGuiDir_Right, 1.0f);
+		}
+
         else // Leaf without bullet, left-adjusted text
             text_pos.x -= text_offset_x;
         if (flags & ImGuiTreeNodeFlags_ClipLabelForTrailingButton)
@@ -6029,6 +6054,32 @@ bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* l
 
         if (g.LogEnabled)
             LogSetNextTextDecoration("###", "###");
+
+        if (iconTextureID != nullptr)
+        {
+            const float iconSize = frame_bb.GetSize().y;
+            const float iconSpacing = 10;
+
+            //iconPos.x = text_pos.x + iconSpacing / 2;
+            //text_pos.x += iconSize + iconSpacing;
+
+            iconPos.x = pos.x + offset + iconSpacing / 2;
+            text_pos.x = iconPos.x + iconSize + iconSpacing / 2;
+
+            ImRect bb(iconPos, iconPos + ImVec2(iconSize, iconSize));
+
+            const ImVec2 uv0 = ImVec2(0, 0);
+            const ImVec2 uv1 = ImVec2(1, 1);
+            const ImVec4 tint_col = ImVec4(1, 1, 1, 1);
+            const ImVec4 border_col = ImVec4(0, 0, 0, 0);
+            window->DrawList->AddImage(iconTextureID,
+                bb.Min,
+                bb.Max,
+                uv0,
+                uv1,
+                GetColorU32(tint_col));
+        }
+
         RenderTextClipped(text_pos, frame_bb.Max, label, label_end, &label_size);
     }
     else
@@ -6129,6 +6180,18 @@ bool ImGui::CollapsingHeader(const char* label, ImGuiTreeNodeFlags flags)
         return false;
 
     return TreeNodeBehavior(window->GetID(label), flags | ImGuiTreeNodeFlags_CollapsingHeader, label);
+}
+
+//Teena - Added Collapsing Header Variant to allow Icon - might want to just modify collapsing header directly
+// CollapsingHeader returns true when opened but do not indent nor push into the ID stack (because of the ImGuiTreeNodeFlags_NoTreePushOnOpen flag).
+// This is basically the same as calling TreeNodeEx(label, ImGuiTreeNodeFlags_CollapsingHeader). You can remove the _NoTreePushOnOpen flag if you want behavior closer to normal TreeNode().
+bool ImGui::CollapsingHeaderComponentGUI(const char* label, ImGuiTreeNodeFlags flags, ImTextureID iconTextureID)
+{
+    ImGuiWindow* window = GetCurrentWindow();
+    if (window->SkipItems)
+        return false;
+
+    return TreeNodeBehavior(window->GetID(label), flags | ImGuiTreeNodeFlags_CollapsingHeader, label, nullptr, iconTextureID);
 }
 
 // p_visible == NULL                        : regular collapsing header
