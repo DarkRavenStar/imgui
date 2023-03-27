@@ -262,6 +262,16 @@ struct ImVec2
 #ifdef IM_VEC2_CLASS_EXTRA
     IM_VEC2_CLASS_EXTRA     // Define additional constructors and implicit cast operators in imconfig.h to convert back and forth between your math types and ImVec2.
 #endif
+
+    bool operator==(const ImVec2& rhs)
+    {
+        return x == rhs.x && y == rhs.y;
+    }
+
+    bool operator!=(const ImVec2& rhs)
+    {
+        return x != rhs.x && y != rhs.y;
+    }
 };
 
 // ImVec4: 4D vector used to store clipping rectangles, colors etc. [Compile-time configurable type]
