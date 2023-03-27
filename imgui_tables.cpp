@@ -256,7 +256,8 @@ Index of this file:
 static const int TABLE_DRAW_CHANNEL_BG0 = 0;
 static const int TABLE_DRAW_CHANNEL_BG2_FROZEN = 1;
 static const int TABLE_DRAW_CHANNEL_NOCLIP = 2;                     // When using ImGuiTableFlags_NoClip (this becomes the last visible channel)
-static const float TABLE_BORDER_SIZE                     = 1.5f;    // FIXME-TABLE: Currently hard-coded because of clipping assumptions with outer borders rendering.
+//Teena - Invirian Engine Modification - Disabled in favor of using dynamic value using ImguiStylePush/Pop
+//static const float TABLE_BORDER_SIZE                     = 1.5f;    // FIXME-TABLE: Currently hard-coded because of clipping assumptions with outer borders rendering.
 static const float TABLE_RESIZE_SEPARATOR_HALF_THICKNESS = 4.0f;    // Extend outside inner borders.
 static const float TABLE_RESIZE_SEPARATOR_FEEDBACK_TIMER = 0.06f;   // Delay/timer before making the hover feedback (color+cursor) visible because tables/columns tends to be more cramped.
 
@@ -428,7 +429,7 @@ bool    ImGui::BeginTableEx(const char* name, ImGuiID id, int columns_count, ImG
     // - PadOuter+PadInner  | Pad ..Content.. Pad | Pad ..Content.. Pad |
     const bool pad_outer_x = (flags & ImGuiTableFlags_NoPadOuterX) ? false : (flags & ImGuiTableFlags_PadOuterX) ? true : (flags & ImGuiTableFlags_BordersOuterV) != 0;
     const bool pad_inner_x = (flags & ImGuiTableFlags_NoPadInnerX) ? false : true;
-    const float inner_spacing_for_border = (flags & ImGuiTableFlags_BordersInnerV) ? TABLE_BORDER_SIZE : 0.0f;
+    const float inner_spacing_for_border = (flags & ImGuiTableFlags_BordersInnerV) ? g.Style.TableBorderSize : 0.0f;
     const float inner_spacing_explicit = (pad_inner_x && (flags & ImGuiTableFlags_BordersInnerV) == 0) ? g.Style.CellPadding.x : 0.0f;
     const float inner_padding_explicit = (pad_inner_x && (flags & ImGuiTableFlags_BordersInnerV) != 0) ? g.Style.CellPadding.x : 0.0f;
     table->CellSpacingX1 = inner_spacing_explicit + inner_spacing_for_border;
@@ -436,7 +437,7 @@ bool    ImGui::BeginTableEx(const char* name, ImGuiID id, int columns_count, ImG
     table->CellPaddingX = inner_padding_explicit;
     table->CellPaddingY = g.Style.CellPadding.y;
 
-    const float outer_padding_for_border = (flags & ImGuiTableFlags_BordersOuterV) ? TABLE_BORDER_SIZE : 0.0f;
+    const float outer_padding_for_border = (flags & ImGuiTableFlags_BordersOuterV) ? g.Style.TableBorderSize : 0.0f;
     const float outer_padding_explicit = pad_outer_x ? g.Style.CellPadding.x : 0.0f;
     table->OuterPaddingX = (outer_padding_for_border + outer_padding_explicit) - table->CellPaddingX;
 
@@ -1062,7 +1063,7 @@ void ImGui::TableUpdateLayout(ImGuiTable* table)
         }
 
         if (visible_n < table->FreezeColumnsCount)
-            host_clip_rect.Min.x = ImClamp(column->MaxX + TABLE_BORDER_SIZE, host_clip_rect.Min.x, host_clip_rect.Max.x);
+            host_clip_rect.Min.x = ImClamp(column->MaxX + g.Style.TableBorderSize, host_clip_rect.Min.x, host_clip_rect.Max.x);
 
         offset_x += column->WidthGiven + table->CellSpacingX1 + table->CellSpacingX2 + table->CellPaddingX * 2.0f;
         visible_n++;
@@ -1246,7 +1247,7 @@ void    ImGui::EndTable()
     // but since the later is likely to be impossible to do we'd rather update both axises together.
     if (table->Flags & ImGuiTableFlags_ScrollX)
     {
-        const float outer_padding_for_border = (table->Flags & ImGuiTableFlags_BordersOuterV) ? TABLE_BORDER_SIZE : 0.0f;
+        const float outer_padding_for_border = (table->Flags & ImGuiTableFlags_BordersOuterV) ? g.Style.TableBorderSize : 0.0f;
         float max_pos_x = table->InnerWindow->DC.CursorMaxPos.x;
         if (table->RightMostEnabledColumn != -1)
             max_pos_x = ImMax(max_pos_x, table->Columns[table->RightMostEnabledColumn].WorkMaxX + table->CellPaddingX + table->OuterPaddingX - outer_padding_for_border);
@@ -1778,7 +1779,7 @@ void ImGui::TableEndRow(ImGuiTable* table)
 
         // Decide of top border color
         ImU32 border_col = 0;
-        const float border_size = TABLE_BORDER_SIZE;
+        const float border_size = g.Style.TableBorderSize;
         if (table->CurrentRow > 0 || table->InnerWindow == table->OuterWindow)
             if (table->Flags & ImGuiTableFlags_BordersInnerH)
                 border_col = (table->LastRowFlags & ImGuiTableRowFlags_Headers) ? table->BorderColorStrong : table->BorderColorLight;
@@ -2515,7 +2516,8 @@ void ImGui::TableDrawBorders(ImGuiTable* table)
 
     // Draw inner border and resizing feedback
     ImGuiTableInstanceData* table_instance = TableGetInstanceData(table, table->InstanceCurrent);
-    const float border_size = TABLE_BORDER_SIZE;
+    //Teena - Only access to style in this function, if more than one, use ImGuiContext& g = *GImGui;
+    const float border_size = ImGui::GetStyle().TableBorderSize;
     const float draw_y1 = table->InnerRect.Min.y;
     const float draw_y2_body = table->InnerRect.Max.y;
     const float draw_y2_head = table->IsUsingHeaders ? ImMin(table->InnerRect.Max.y, (table->FreezeRowsCount >= 1 ? table->InnerRect.Min.y : table->WorkRect.Min.y) + table_instance->LastFirstRowHeight) : draw_y1;

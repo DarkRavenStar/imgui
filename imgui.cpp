@@ -1102,6 +1102,13 @@ ImGuiStyle::ImGuiStyle()
     CurveTessellationTol    = 1.25f;            // Tessellation tolerance when using PathBezierCurveTo() without a specific number of segments. Decrease for highly tessellated curves (higher quality, more polygons), increase to reduce quality.
     CircleTessellationMaxError = 0.30f;         // Maximum error (in pixels) allowed when using AddCircle()/AddCircleFilled() or drawing rounded corner rectangles with no explicit segment count specified. Decrease for higher quality but more geometry.
 
+    /////////////////////////////////////////////////////////////////////////////// 
+    //Teena - Invirian Engine Custom Extension - Always append to end to prevent collision
+
+    TableBorderSize = 1.0f;                     //Used for table border size - might cause bugs
+
+    /////////////////////////////////////////////////////////////////////////////
+    
     // Default theme
     ImGui::StyleColorsDark(this);
 }
@@ -1133,6 +1140,14 @@ void ImGuiStyle::ScaleAllSizes(float scale_factor)
     DisplayWindowPadding = ImFloor(DisplayWindowPadding * scale_factor);
     DisplaySafeAreaPadding = ImFloor(DisplaySafeAreaPadding * scale_factor);
     MouseCursorScale = ImFloor(MouseCursorScale * scale_factor);
+
+    /////////////////////////////////////////////////////////////////////////////
+    //Teena - Invirian Engine Custom Extension - Always append to end to prevent collision
+
+    TableBorderSize = ImFloor(TableBorderSize * scale_factor);
+
+    /////////////////////////////////////////////////////////////////////////////
+    
 }
 
 ImGuiIO::ImGuiIO()
@@ -2893,6 +2908,14 @@ static const ImGuiStyleVarInfo GStyleVarInfo[] =
     { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, TabRounding) },         // ImGuiStyleVar_TabRounding
     { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, ButtonTextAlign) },     // ImGuiStyleVar_ButtonTextAlign
     { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, SelectableTextAlign) }, // ImGuiStyleVar_SelectableTextAlign
+
+    /////////////////////////////////////////////////////////////////////////////
+    //Teena - Invirian Engine Custom Extension - Always append to end to prevent collision
+
+    { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, TableBorderSize) },     // ImGuiStyleVar_TableBorderSize
+
+    /////////////////////////////////////////////////////////////////////////////
+    
 };
 
 static const ImGuiStyleVarInfo* GetStyleVarInfo(ImGuiStyleVar idx)
